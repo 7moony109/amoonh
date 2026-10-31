@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رحلة البحث عن الكنز - جدول الضرب 5</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        /* خلفية مائية متحركة */
+        .sea-bg {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 40%, #0369a1 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 1000px 1000px 0 0;
+            bottom: 0;
+            animation: waveAnim 8s infinite linear;
+        }
+
+        .wave:nth-child(2) {
+            bottom: 10px;
+            opacity: 0.5;
+            animation: waveAnim 6s infinite linear reverse;
+        }
+
+        @keyframes waveAnim {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* حركة السفينة Smooth Transition */
+        .ship-transition {
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* تأثيرات الصناديق والمعالم */
+        .island-node {
+            transition: all 0.3s ease;
+        }
+        .island-node:hover {
+            transform: scale(1.15) rotate(-3deg);
+        }
+
+        /* أنيميشن النبض للكنز */
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 15px #facc15); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 30px #f59e0b); transform: scale(1.1); }
+        }
+        .treasure-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        /* شهادة التقدير - تجهيز للطباعة */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-modal, #certificate-modal * {
+                visibility: visible;
+            }
+            #certificate-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white !important;
+                display: flex !important;
+                justify-content: center;
+                align-items: center;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col justify-between select-none">
+
+    <!-- شريط الألعاب العلوي -->
+    <header class="bg-amber-500/90 backdrop-blur-md border-b-4 border-amber-600 p-4 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-100 text-amber-800 p-2 rounded-2xl shadow-inner font-black text-xl">
+                    <i class="fa-solid fa-map-marked-alt text-2xl text-amber-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black text-white drop-shadow">جزيرة الكنز 🏝️</h1>
+                    <p class="text-xs text-amber-100 font-semibold">مغامرة جدول الضرب (5)</p>
+                </div>
+            </div>
+
+            <!-- إحصائيات الرحلة -->
+            <div class="flex gap-3 md:gap-6">
+                <div class="bg-amber-800/40 text-amber-100 px-4 py-1.5 rounded-xl border border-amber-400/30 text-center">
+                    <span class="block text-xs font-bold text-amber-200">النقاط ⭐</span>
+                    <span id="score" class="text-xl font-black text-yellow-300">0</span>
+                </div>
+                <div class="bg-amber-800/40 text-amber-100 px-4 py-1.5 rounded-xl border border-amber-400/30 text-center">
+                    <span class="block text-xs font-bold text-amber-200">التقدم 🗺️</span>
+                    <span id="progress" class="text-xl font-black text-emerald-300">0 / 10</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- شاشة إدخال اسم الطالب -->
+    <div id="start-screen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-amber-100 to-amber-200 border-4 border-amber-500 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+            <div class="text-6xl mb-4 animate-bounce">🏴‍☠️</div>
+            <h2 class="text-2xl md:text-3xl font-black text-amber-900 mb-2">أهلاً بك يا بطل البحار!</h2>
+            <p class="text-amber-800 mb-6 font-semibold">استعد للإبحار نحو جزيرة الكنز وحل مسائل جدول 5!</p>
+            
+            <div class="mb-6 text-right">
+                <label class="block text-amber-900 font-bold mb-2 mr-1">اكتب اسمك للبدء بالمغامرة:</label>
+                <input type="text" id="player-name-input" placeholder="اسم الطالب / الطالبة" class="w-full text-center text-lg font-bold p-3 rounded-2xl border-2 border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-inner">
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl py-3 px-6 rounded-2xl shadow-lg border-b-4 border-emerald-700 active:translate-y-1 transition-all">
+                ابدأ الإبحار الآن ⛵
+            </button>
+            <p class="text-xs text-amber-700 mt-4 font-bold">تحت إشراف المعلمة: أمينة عمر حكمي</p>
+        </div>
+    </div>
+
+    <!-- منطقة خريطة الجزيرة والتنقل -->
+    <main class="flex-1 sea-bg relative min-h-[500px] flex items-center justify-center p-4 md:p-10">
+        <!-- الأمواج -->
+        <div class="wave"></div>
+        <div class="wave"></div>
+
+        <!-- خريطة الجزيرة التفاعلية -->
+        <div class="relative w-full max-w-4xl h-[450px] bg-emerald-300/30 rounded-3xl border-4 border-dashed border-amber-200/60 backdrop-blur-sm p-4 overflow-hidden flex flex-col justify-between">
+            
+            <!-- السفينة المبحرة -->
+            <div id="ship" class="absolute z-20 text-4xl md:text-5xl ship-transition -mt-6 -mr-6 drop-shadow-2xl" style="top: 85%; right: 5%;">
+                ⛵
+            </div>
+
+            <!-- شبكة الجزر والصناديق (تتولد تلقائياً عبر JS) -->
+            <div id="island-nodes-container" class="relative w-full h-full z-10 flex flex-wrap justify-between items-center p-6">
+                <!-- Chest islands generated dynamically -->
+            </div>
+        </div>
+    </main>
+
+    <!-- نافذة السؤال / الصندوق -->
+    <div id="question-modal" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-sky-50 to-amber-50 border-4 border-amber-400 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative text-center">
+            
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-amber-500 border-4 border-white text-white p-3 rounded-full shadow-lg text-3xl">
+                📦
+            </div>
+
+            <h3 class="text-lg font-bold text-sky-800 mt-4 mb-2">افتح الصندوق بحل المسألة!</h3>
+            
+            <!-- المسألة -->
+            <div class="bg-white/80 border-2 border-sky-200 rounded-2xl p-6 my-4 shadow-inner">
+                <span id="question-text" class="text-4xl md:text-5xl font-black text-amber-600 tracking-wider">5 × 3 = ؟</span>
+            </div>
+
+            <!-- خيارات الإجابة -->
+            <div id="options-container" class="grid grid-cols-2 gap-4 mt-6">
+                <!-- أزرار الخيارات تولد عبر JS -->
+            </div>
+
+            <!-- التغذية الراجعة -->
+            <div id="feedback" class="mt-4 text-lg font-bold min-h-[30px]"></div>
+        </div>
+    </div>
+
+    <!-- نافذة الفوز و شهادة التقدير -->
+    <div id="certificate-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-amber-50 border-8 border-amber-600 rounded-3xl p-6 md:p-10 max-w-2xl w-full shadow-2xl text-center relative overflow-hidden">
+            
+            <!-- زخارف الشهادة -->
+            <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-amber-500/10 rounded-tr-full pointer-events-none"></div>
+
+            <div class="text-5xl mb-2">🏆</div>
+            <h2 class="text-2xl md:text-3xl font-black text-amber-900 border-b-2 border-amber-300 pb-2">شهادة تفوق وإنجاز</h2>
+            <p class="text-amber-800 font-semibold my-2">تمنح هذه الشهادة للبطل/ـة:</p>
+            
+            <!-- اسم الطالب -->
+            <h3 id="cert-student-name" class="text-3xl md:text-4xl font-black text-emerald-600 my-3 underline decoration-amber-400">اسم الطالب</h3>
+            
+            <p class="text-slate-700 leading-relaxed font-bold text-sm md:text-base my-4">
+                لقد نجحت في الابحار عبر جزيرة الكنز وفتحت جميع الصناديق بنجاح من خلال إتقان جدول الضرب في العدد <span class="text-amber-600 text-xl font-black">(5)</span>!
+            </p>
+
+            <div class="flex justify-between items-end my-6 px-6 pt-4 border-t border-amber-200 text-right">
+                <div>
+                    <span class="block text-xs text-slate-500 font-bold">النتيجة النهائية:</span>
+                    <span id="cert-score" class="text-xl font-black text-amber-600">100 / 100</span>
+                </div>
+                <div class="text-left">
+                    <span class="block text-xs text-slate-500 font-bold">معلمة المادة:</span>
+                    <span class="text-lg font-black text-amber-900">أ. أمينة عمر حكمي</span>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="flex gap-4 justify-center mt-6 no-print">
+                <button onclick="window.print()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> طباعة الشهادة
+                </button>
+                <button onclick="restartGame()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> إعادة المغامرة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- أسفل الصفحة -->
+    <footer class="bg-slate-900/80 backdrop-blur-sm text-center py-3 text-xs text-amber-200/70 border-t border-slate-800">
+        مصممة خصيصاً لطلابنا الأبطال 🌟 | بإشراف المعلمة: أمينة عمر حكمي
+    </footer>
+
+    <!-- البرمجة والتفاعل JS -->
+    <script>
+        // إعداد أسئلة جدول الضرب في 5
+        const questions = [
+            { num: 1, text: "5 × 1", answer: 5, options: [5, 10, 15, 0] },
+            { num: 2, text: "5 × 2", answer: 10, options: [10, 15, 20, 5] },
+            { num: 3, text: "5 × 3", answer: 15, options: [12, 15, 20, 25] },
+            { num: 4, text: "5 × 4", answer: 20, options: [15, 20, 25, 30] },
+            { num: 5, text: "5 × 5", answer: 25, options: [20, 25, 30, 35] },
+            { num: 6, text: "5 × 6", answer: 30, options: [25, 30, 35, 40] },
+            { num: 7, text: "5 × 7", answer: 35, options: [30, 35, 40, 45] },
+            { num: 8, text: "5 × 8", answer: 40, options: [35, 40, 45, 50] },
+            { num: 9, text: "5 × 9", answer: 45, options: [40, 45, 50, 55] },
+            { num: 10, text: "5 × 10", answer: 50, options: [45, 50, 55, 60] }
+        ];
+
+        // احداثيات الصناديق والجزيرة النهائية
+        const islandPositions = [
+            { top: 75, right: 10 },  // 1
+            { top: 55, right: 25 },  // 2
+            { top: 75, right: 42 },  // 3
+            { top: 50, right: 58 },  // 4
+            { top: 25, right: 45 },  // 5
+            { top: 20, right: 25 },  // 6
+            { top: 15, right: 65 },  // 7
+            { top: 35, right: 80 },  // 8
+            { top: 65, right: 82 },  // 9
+            { top: 80, right: 65 },  // 10
+            { top: 45, right: 10 }   // الكنز النهائي 🏴‍☠️👑
+        ];
+
+        let studentName = "";
+        let currentStep = 0;
+        let score = 0;
+
+        // بدء اللعبة
+        function startGame() {
+            const nameInput = document.getElementById('player-name-input').value.trim();
+            if (!nameInput) {
+                alert('لطفاً ادخل اسمك للبُدء بالمغامرة!');
+                return;
+            }
+            studentName = nameInput;
+            document.getElementById('start-screen').classList.add('hidden');
+            initIslandMap();
+            moveShipToNode(0);
+        }
+
+        // رسم الجزيرة والتنقيل
+        function initIslandMap() {
+            const container = document.getElementById('island-nodes-container');
+            container.innerHTML = '';
+
+            // إنشاء النقاط والصناديق
+            for (let i = 0; i < questions.length; i++) {
+                const pos = islandPositions[i];
+                const node = document.createElement('div');
+                node.id = `node-${i}`;
+                node.className = `absolute island-node cursor-pointer flex flex-col items-center justify-center p-2 rounded-2xl bg-amber-100 border-2 border-amber-400 shadow-md ${i > 0 ? 'opacity-50 pointer-events-none' : ''}`;
+                node.style.top = `${pos.top}%`;
+                node.style.right = `${pos.right}%`;
+                node.onclick = () => openQuestion(i);
+
+                node.innerHTML = `
+                    <div class="text-2xl md:text-3xl">📦</div>
+                    <span class="text-[10px] font-black bg-amber-800 text-white px-1.5 py-0.5 rounded-full -mt-1">${i + 1}</span>
+                `;
+                container.appendChild(node);
+            }
+
+            // إضافة كنز الجزيرة النهائي
+            const finalPos = islandPositions[10];
+            const treasureNode = document.createElement('div');
+            treasureNode.id = `node-final`;
+            treasureNode.className = `absolute island-node opacity-40 pointer-events-none flex flex-col items-center justify-center p-3 rounded-full bg-yellow-300 border-4 border-yellow-500 shadow-2xl treasure-glow`;
+            treasureNode.style.top = `${finalPos.top}%`;
+            treasureNode.style.right = `${finalPos.right}%`;
+            treasureNode.innerHTML = `
+                <div class="text-4xl md:text-5xl">👑💎</div>
+                <span class="text-xs font-black bg-red-600 text-white px-2 py-0.5 rounded-full mt-1">الكنز</span>
+            `;
+            container.appendChild(treasureNode);
+        }
+
+        // تحريك السفينة إلى موقع معين
+        function moveShipToNode(index) {
+            const ship = document.getElementById('ship');
+            const pos = islandPositions[index];
+            ship.style.top = `${pos.top}%`;
+            ship.style.right = `${pos.right}%`;
+        }
+
+        // فتح صندوق السؤال
+        function openQuestion(index) {
+            if (index !== currentStep) return;
+
+            const q = questions[index];
+            document.getElementById('question-text').innerText = `${q.text} = ؟`;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            // خلط الخيارات
+            const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-2xl py-3 rounded-xl border-b-4 border-amber-600 shadow-md active:translate-y-1 transition-all";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, q.answer, index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('question-modal').classList.remove('hidden');
+        }
+
+        // التحقق من الإجابة
+        function checkAnswer(selected, correct, index) {
+            const feedback = document.getElementById('feedback');
+            
+            if (selected === correct) {
+                feedback.className = "mt-4 text-lg font-bold text-emerald-600 animate-bounce";
+                feedback.innerText = "إجابة صحيحة! أحسنت يا بطل! 🌟";
+                
+                score += 10;
+                document.getElementById('score').innerText = score;
+
+                // تحديث حالة الصندوق الحالي
+                const currentNode = document.getElementById(`node-${index}`);
+                currentNode.innerHTML = `<div class="text-2xl md:text-3xl">✨🔓</div>`;
+                currentNode.classList.add('bg-emerald-200', 'border-emerald-500');
+
+                setTimeout(() => {
+                    document.getElementById('question-modal').classList.add('hidden');
+                    currentStep++;
+                    document.getElementById('progress').innerText = `${currentStep} / 10`;
+
+                    if (currentStep < questions.length) {
+                        // تفعيل الصندوق التالي
+                        const nextNode = document.getElementById(`node-${currentStep}`);
+                        nextNode.classList.remove('opacity-50', 'pointer-events-none');
+                        moveShipToNode(currentStep);
+                    } else {
+                        // الوصول للكنز النهائي!
+                        moveShipToNode(10);
+                        const finalNode = document.getElementById('node-final');
+                        finalNode.classList.remove('opacity-40');
+                        
+                        setTimeout(showCertificate, 1500);
+                    }
+                }, 1000);
+
+            } else {
+                feedback.className = "mt-4 text-lg font-bold text-rose-600 animate-pulse";
+                feedback.innerText = "حاول مرة أخرى يا بطل! 💡";
+            }
+        }
+
+        // عرض شهادة التقدير وإطلاق الألعاب النارية
+        function showCertificate() {
+            document.getElementById('cert-student-name').innerText = studentName;
+            document.getElementById('cert-score').innerText = `${score} / 100`;
+            document.getElementById('certificate-modal').classList.remove('hidden');
+
+            // إطلاق الاحتفال بالورود والألوان
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // إعادة اللعبة
+        function restartGame() {
+            currentStep = 0;
+            score = 0;
+            document.getElementById('score').innerText = '0';
+            document.getElementById('progress').innerText = '0 / 10';
+            document.getElementById('certificate-modal').classList.add('hidden');
+            initIslandMap();
+            moveShipToNode(0);
+        }
+    </script>
+</body>
+</html>
